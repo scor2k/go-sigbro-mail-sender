@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -19,30 +20,44 @@ import (
 	ses "github.com/aws/aws-sdk-go/service/ses"
 )
 
+// using this vars for build
+var appName = "go-sigbro-mail-sender"
+var appVersion = "0.1.0"
+
+// RabbitMQ connection
 var rbmqHost = os.Getenv("MAILER_RABBITMQ_HOST")
 var rbmqPort = os.Getenv("MAILER_RABBITMQ_PORT")
 var rbmqUser = os.Getenv("MAILER_RABBITMQ_USER")
 var rbmqPass = os.Getenv("MAILER_RABBITMQ_PASS")
 var rbmqQueue = os.Getenv("MAILER_RABBITMQ_QUEUE")
 
+// Sentry
 var sentryDSN = os.Getenv("SENTRY_DSN")
 
+// Some params for sending emails
 const (
 	sender    = "Sigbro  <noreply@nxter.org>"
 	charSet   = "UTF-8"
 	awsRegion = "eu-west-1"
 )
 
+// Template for every email via RabbitMQ
+type emailJSON struct {
+	Recipient string `json:"recipient"`
+	Subject   string `json:"subject"`
+	Body      string `json:"body"`
+}
+
 func main() {
 	// set logger
 	hostname, _ := os.Hostname()
-	log.SetLogger(log.With(rz.Fields(rz.String("app", "go-sigbro-mail-sender"), rz.String("host", hostname))))
+	log.SetLogger(log.With(rz.Fields(rz.String("app", appName), rz.String("host", hostname))))
 
 	// setup sentry
 	sentryErr := sentry.Init(sentry.ClientOptions{
 		Dsn:         sentryDSN,
 		Environment: "",
-		Release:     "go-sigbro-mail-sender",
+		Release:     appName,
 		Debug:       true,
 	})
 	failOnError(sentryErr, "Cannot initialyze Sentry")
@@ -92,7 +107,17 @@ func main() {
 
 	go func() {
 		for d := range msgs {
-			log.Debug("Message", rz.Bytes("Body", d.Body))
+			// parse json from RabbitMQ
+			email := emailJSON{}
+			jsonErr := json.Unmarshal(d.Body, &email)
+
+			if jsonErr != nil {
+				log.Debug("Cannot parse message", rz.Bytes("Body", d.Body))
+				sentry.CaptureMessage("Cannot parse email")
+				continue
+			}
+
+			sendMailSES(email)
 		}
 	}()
 
@@ -109,7 +134,7 @@ func failOnError(err error, msg string) {
 	}
 }
 
-func sendMailSES(to string, subject string, htmlBody string) {
+func sendMailSES(email emailJSON) {
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(awsRegion)})
 	failOnError(err, "Cannot connect to Amazon SES")
 
@@ -121,14 +146,14 @@ func sendMailSES(to string, subject string, htmlBody string) {
 		Destination: &ses.Destination{
 			CcAddresses: []*string{},
 			ToAddresses: []*string{
-				aws.String(to),
+				aws.String(email.Recipient),
 			},
 		},
 		Message: &ses.Message{
 			Body: &ses.Body{
 				Html: &ses.Content{
 					Charset: aws.String(charSet),
-					Data:    aws.String(htmlBody),
+					Data:    aws.String(email.Body),
 				},
 				/*
 					Text: &ses.Content{
@@ -139,7 +164,7 @@ func sendMailSES(to string, subject string, htmlBody string) {
 			},
 			Subject: &ses.Content{
 				Charset: aws.String(charSet),
-				Data:    aws.String(subject),
+				Data:    aws.String(email.Subject),
 			},
 		},
 		Source: aws.String(sender),
@@ -148,7 +173,7 @@ func sendMailSES(to string, subject string, htmlBody string) {
 	}
 
 	// Attempt to send the email.
-	result, err := svc.SendEmail(input)
+	_, err = svc.SendEmail(input)
 
 	if err != nil {
 		sentry.CaptureMessage("Cannot send email")
@@ -156,5 +181,6 @@ func sendMailSES(to string, subject string, htmlBody string) {
 		return
 	}
 
-	fmt.Println(result)
+	msg := fmt.Sprintf("Message to [%s] was sent.", email.Recipient)
+	log.Info(msg)
 }
