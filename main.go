@@ -12,6 +12,11 @@ import (
 	"github.com/streadway/amqp"
 
 	sentry "github.com/getsentry/sentry-go"
+
+	//go get -u github.com/aws/aws-sdk-go
+	aws "github.com/aws/aws-sdk-go/aws"
+	session "github.com/aws/aws-sdk-go/aws/session"
+	ses "github.com/aws/aws-sdk-go/service/ses"
 )
 
 var rbmqHost = os.Getenv("MAILER_RABBITMQ_HOST")
@@ -21,6 +26,12 @@ var rbmqPass = os.Getenv("MAILER_RABBITMQ_PASS")
 var rbmqQueue = os.Getenv("MAILER_RABBITMQ_QUEUE")
 
 var sentryDSN = os.Getenv("SENTRY_DSN")
+
+const (
+	sender    = "Sigbro  <noreply@nxter.org>"
+	charSet   = "UTF-8"
+	awsRegion = "eu-west-1"
+)
 
 func main() {
 	// set logger
@@ -96,4 +107,54 @@ func failOnError(err error, msg string) {
 		log.Error(msg, rz.Error("rbmq error", err))
 		os.Exit(1)
 	}
+}
+
+func sendMailSES(to string, subject string, htmlBody string) {
+	sess, err := session.NewSession(&aws.Config{Region: aws.String(awsRegion)})
+	failOnError(err, "Cannot connect to Amazon SES")
+
+	// Create an SES session.
+	svc := ses.New(sess)
+
+	// Assemble the email.
+	input := &ses.SendEmailInput{
+		Destination: &ses.Destination{
+			CcAddresses: []*string{},
+			ToAddresses: []*string{
+				aws.String(to),
+			},
+		},
+		Message: &ses.Message{
+			Body: &ses.Body{
+				Html: &ses.Content{
+					Charset: aws.String(charSet),
+					Data:    aws.String(htmlBody),
+				},
+				/*
+					Text: &ses.Content{
+							Charset: aws.String(charSet),
+							Data:    aws.String(TextBody),
+					},
+				*/
+			},
+			Subject: &ses.Content{
+				Charset: aws.String(charSet),
+				Data:    aws.String(subject),
+			},
+		},
+		Source: aws.String(sender),
+		// Uncomment to use a configuration set
+		//ConfigurationSetName: aws.String(ConfigurationSet),
+	}
+
+	// Attempt to send the email.
+	result, err := svc.SendEmail(input)
+
+	if err != nil {
+		sentry.CaptureMessage("Cannot send email")
+		log.Error("Cannot send email", rz.Error("Amazon SES error", err))
+		return
+	}
+
+	fmt.Println(result)
 }
