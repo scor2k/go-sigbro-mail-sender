@@ -8,6 +8,7 @@ import (
 
 	"github.com/bloom42/rz-go"
 	"github.com/bloom42/rz-go/log"
+
 	"github.com/streadway/amqp"
 
 	sentry "github.com/getsentry/sentry-go"
@@ -35,6 +36,8 @@ func main() {
 	})
 	failOnError(sentryErr, "Cannot initialyze Sentry")
 	defer sentry.Flush(2 * time.Second)
+
+	//sentry.CaptureMessage("go-sigbro-mail-sender running...")
 
 	// set rabbitMQ port
 	port, _ := strconv.Atoi(rbmqPort)
