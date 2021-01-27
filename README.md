@@ -15,6 +15,7 @@ type emailJSON struct {
 
 You should export these envs before start:
 
+```
 export MAILER_RABBITMQ_HOST=
 export MAILER_RABBITMQ_USER=
 export MAILER_RABBITMQ_PASS=
@@ -24,3 +25,4 @@ export AWS_ACCESS_KEY_ID=
 export AWS_SECRET_ACCESS_KEY=
 
 export SENTRY_DSN=
+```
