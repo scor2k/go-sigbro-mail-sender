@@ -5,6 +5,8 @@
 *.so
 *.dylib
 
+go-sigbro-mail-sender
+
 # Test binary, built with `go test -c`
 *.test
 

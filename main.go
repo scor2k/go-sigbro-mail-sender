@@ -22,7 +22,7 @@ import (
 
 // using this vars for build
 var appName = "go-sigbro-mail-sender"
-var appVersion = "0.1.0"
+var appVersion = "0.1.1"
 
 // RabbitMQ connection
 var rbmqHost = os.Getenv("MAILER_RABBITMQ_HOST")
