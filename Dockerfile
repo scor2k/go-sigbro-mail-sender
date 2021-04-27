@@ -2,7 +2,7 @@ FROM golang:1.15.6 as builder
 WORKDIR /go/src/github.com/scor2k/go-sigbro-mail-sender/
 COPY go.mod go.sum .
 RUN go mod download 
-COPY main.go .
+COPY *.go .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -o go-sigbro-mail-sender .
 
 

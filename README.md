@@ -11,18 +11,38 @@ type emailJSON struct {
 }
 ```
 
-## Env
+## Envs
 
-You should export these envs before start:
+You should/may export these envs before start:
 
 ```
-export MAILER_RABBITMQ_HOST=
-export MAILER_RABBITMQ_USER=
-export MAILER_RABBITMQ_PASS=
-export MAILER_RABBITMQ_QUEUE=
+export LOG_LEVEL=DEBUG
 
+# Amazon SES
 export AWS_ACCESS_KEY_ID=
 export AWS_SECRET_ACCESS_KEY=
 
+# Sentry
 export SENTRY_DSN=
+
+# Amazon SQS
+export SIGBRO_SQS_REGION=eu-west-1
+export SIGBRO_SQS_URL=
+export SIGBRO_SQS_ACCESS_KEY=
+export SIGBRO_SQS_SECRET_KEY=
+
+# Telegram
+export TELEGRAM_TOKEN=
+export TELEGRAM_CHAT=
+
 ```
+
+## Changelog
+
+*1.0.0 version*
+ - uses Amazon SQS as a queue
+ - send alerts about SQS/SES issues via telegram
+
+*0.1.1 version*
+ - uses RabbitMQ as a queue
+ - send mail via Amazon SES
