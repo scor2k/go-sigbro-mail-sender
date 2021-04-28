@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -70,20 +71,26 @@ consume:
 
 	if len(msgResult.Messages) > 0 {
 		body := *msgResult.Messages[0].Body
-		recipient := *msgResult.Messages[0].MessageAttributes["Recipient"].StringValue
-		subject := *msgResult.Messages[0].MessageAttributes["Subject"].StringValue
 
-		log.Debug("Get a message", rz.String("To", recipient), rz.String("Subject", subject))
+		var emailBody emailJSON
+
+		errJson := json.Unmarshal([]byte(body), &emailBody)
+		if errJson != nil {
+			log.Error("Cannot unmarshal Email", rz.Error("exception", errJson))
+			goto consume
+		}
+
+		log.Debug("Get a message", rz.String("To", emailBody.Recipient), rz.String("Subject", emailBody.Subject))
 
 		errSES := sendMailSES(emailJSON{
-			Body:      body,
-			Recipient: recipient,
-			Subject:   subject,
+			Body:      emailBody.Body,
+			Recipient: emailBody.Recipient,
+			Subject:   emailBody.Subject,
 		})
 
 		if errSES == nil {
 
-			log.Info("Message was send", rz.String("To", recipient), rz.String("Subject", subject))
+			log.Info("Message was send", rz.String("To", emailBody.Recipient), rz.String("Subject", emailBody.Subject))
 			// remove item from the queue
 			_, delErr := svc.DeleteMessage(&sqs.DeleteMessageInput{
 				QueueUrl:      &sqsURL,
@@ -95,7 +102,7 @@ consume:
 			}
 
 		} else {
-			log.Error("Cannot send email", rz.String("To", recipient), rz.String("Subject", subject), rz.Error("Error", errSES))
+			log.Error("Cannot send email", rz.String("To", emailBody.Recipient), rz.String("Subject", emailBody.Subject), rz.Error("Error", errSES))
 		}
 
 		goto consume

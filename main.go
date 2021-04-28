@@ -12,7 +12,7 @@ import (
 
 // using this vars for build
 var appName = "go-sigbro-mail-sender"
-var appVersion = "1.0.0"
+var appVersion = "1.0.1"
 
 func main() {
 	// set logger

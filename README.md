@@ -39,6 +39,9 @@ export TELEGRAM_CHAT=
 
 ## Changelog
 
+*1.0.1 version*
+ - switched to json body instead of plain/text + params
+
 *1.0.0 version*
  - uses Amazon SQS as a queue
  - send alerts about SQS/SES issues via telegram
