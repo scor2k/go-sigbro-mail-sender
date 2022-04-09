@@ -18,7 +18,6 @@ var (
 
 // Some params for sending emails
 const (
-	sender    = "Sigbro  <noreply@nxter.org>"
 	charSet   = "UTF-8"
 	awsRegion = "eu-west-1"
 )

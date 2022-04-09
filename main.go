@@ -1,18 +1,14 @@
 package main
 
 import (
-	"os"
-	"time"
-
 	"github.com/bloom42/rz-go"
 	"github.com/bloom42/rz-go/log"
-
-	sentry "github.com/getsentry/sentry-go"
+	"os"
 )
 
 // using this vars for build
 var appName = "go-sigbro-mail-sender"
-var appVersion = "1.0.1"
+var appVersion = "1.2.0"
 
 func main() {
 	// set logger
@@ -29,19 +25,7 @@ func main() {
 			rz.Level(logLevel),
 		))
 
-	// setup sentry
-	sentryErr := sentry.Init(sentry.ClientOptions{
-		Dsn:         sentryDSN,
-		Environment: "",
-		Release:     appName,
-		Debug:       true,
-	})
-	failOnError(sentryErr, "Cannot initialize Sentry")
-	defer sentry.Flush(2 * time.Second)
-
 	startConsume()
-
-	os.Exit(0)
 }
 
 func failOnError(err error, msg string) {

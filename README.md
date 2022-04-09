@@ -8,6 +8,7 @@ type emailJSON struct {
 	Recipient string `json:"recipient"`
 	Subject   string `json:"subject"`
 	Body      string `json:"body"`
+	Sender    string `json:"sender"`
 }
 ```
 
@@ -38,6 +39,11 @@ export TELEGRAM_CHAT=
 ```
 
 ## Changelog
+*1.2.0 version*
+ - feat: remove sentry
+
+*1.1.0 version*
+ - feat: ability to change sender
 
 *1.0.1 version*
  - switched to json body instead of plain/text + params

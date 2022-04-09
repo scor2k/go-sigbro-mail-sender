@@ -34,14 +34,7 @@ func startConsume() {
 
 	svc := sqs.New(sess)
 
-	retryCounter := 0
 consume:
-	retryCounter += 1
-	if retryCounter > sqsRetry {
-		log.Info("buy-buy, see you next time.")
-		os.Exit(0)
-	}
-
 	msgResult, errSqs := svc.ReceiveMessage(&sqs.ReceiveMessageInput{
 		AttributeNames: []*string{
 			aws.String(sqs.MessageSystemAttributeNameSentTimestamp),
@@ -61,7 +54,7 @@ consume:
 			log.Error("Cannot send Alert to the telegram", rz.Error("Error", errTelegram))
 		}
 
-		time.Sleep(3 * time.Second)
+		time.Sleep(15 * time.Second)
 		os.Exit(1)
 	}
 
@@ -86,6 +79,7 @@ consume:
 			Body:      emailBody.Body,
 			Recipient: emailBody.Recipient,
 			Subject:   emailBody.Subject,
+			Sender:    emailBody.Sender,
 		})
 
 		if errSES == nil {
@@ -109,7 +103,7 @@ consume:
 
 	} else {
 		log.Debug("Nothing to consume. Wait and try again")
-		time.Sleep(2 * time.Second)
+		time.Sleep(5 * time.Second)
 		goto consume
 	}
 }

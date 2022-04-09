@@ -17,6 +17,12 @@ func sendMailSES(email emailJSON) error {
 	// Create an SES session.
 	svc := ses.New(sess)
 
+	// setup default sender
+	sender := "Sigbro  <noreply@nxter.org>"
+	if len(email.Sender) > 0 {
+		sender = email.Sender
+	}
+
 	// Assemble the email.
 	input := &ses.SendEmailInput{
 		Destination: &ses.Destination{
@@ -44,7 +50,7 @@ func sendMailSES(email emailJSON) error {
 	_, err = svc.SendEmail(input)
 
 	if err != nil {
-		errTelegram := tg.SendMessage("[go-sigbro-mail-sender] Cannot send email via Amazon SES")
+		errTelegram := tg.SendMessage("[go-sigbro-mail-sender] Cannot send email via [" + sender + "]")
 		if errTelegram != nil {
 			log.Error("Cannot send Alert to the telegram", rz.Error("Error", errTelegram))
 		}
@@ -53,7 +59,7 @@ func sendMailSES(email emailJSON) error {
 		return err
 	}
 
-	msg := fmt.Sprintf("Message to [%s] was sent.", email.Recipient)
+	msg := fmt.Sprintf("Message to [%s] was sent via [%s].", email.Recipient, sender)
 	log.Info(msg)
 	return nil
 }
