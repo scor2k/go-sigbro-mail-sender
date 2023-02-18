@@ -6,5 +6,12 @@ USER_NAME="scor2k"
 IMAGE_NAME=`cat main.go | grep "var appName" | awk -F '=' '{print $2}' | sed 's/ //g' | sed 's/"//g'`
 VER=`cat main.go | grep "var appVersion" | awk -F '=' '{print $2}' | sed 's/ //g' | sed 's/"//g'`
 
-docker build --tag $USER_NAME/$IMAGE_NAME:$VER .
-docker push $USER_NAME/$IMAGE_NAME:$VER
+APP=go-sigbro-mail-sender
+
+GOARCH=arm64 GOOS=linux go build -a -o ${APP} .
+
+docker build --build-arg TARGETPLATFORM=linux/arm64 -f Dockerfile.arm64 -t $USER_NAME/$IMAGE_NAME:$VER-arm .
+docker push $USER_NAME/$IMAGE_NAME:$VER-arm
+
+rm -f ${APP}
+
